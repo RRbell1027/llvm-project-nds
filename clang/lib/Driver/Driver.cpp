@@ -46,7 +46,7 @@
 #include "ToolChains/SPIRV.h"
 #include "ToolChains/SPIRVOpenMP.h"
 #include "ToolChains/SYCL.h"
-#include "ToolChains/Sylph.h"
+#include "ToolChains/NDS.h"
 #include "ToolChains/Solaris.h"
 #include "ToolChains/TCE.h"
 #include "ToolChains/UEFI.h"
@@ -6727,6 +6727,13 @@ const ToolChain &Driver::getOffloadToolChain(
   std::unique_ptr<ToolChain> &HostTC = ToolChains[AuxTarget.str()];
 
   assert(HostTC && "Host toolchain for offloading doesn't exit?");
+
+  if (!TC) {
+    // 依 target vendor 建立 NDS toolchain。建構子與一般 toolchain 相同，不吃 host。
+    if (Target.getVendor() == llvm::Triple::NDS)
+      TC = std::make_unique<toolchains::NDSToolChain>(*this, Target, Args);
+  }
+
   if (!TC) {
     // Detect the toolchain based off of the target operating system.
     switch (Target.getOS()) {
@@ -6839,8 +6846,6 @@ const ToolChain &Driver::getToolChain(const ArgList &Args,
         TC = std::make_unique<toolchains::VEToolChain>(*this, Target, Args);
       else if (Target.isOHOSFamily())
         TC = std::make_unique<toolchains::OHOS>(*this, Target, Args);
-      else if (Target.getVendor() == llvm::Triple::Nuvoton)
-        TC = std::make_unique<toolchains::SYLPHToolChain>(*this, Target, Args);
       else
         TC = std::make_unique<toolchains::Linux>(*this, Target, Args);
       break;

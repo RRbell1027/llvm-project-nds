@@ -9446,3 +9446,8 @@ def wasm_opt : Flag<["--"], "wasm-opt">,
   Group<m_Group>,
   HelpText<"Enable the wasm-opt optimizer (default)">,
   MarshallingInfoNegativeFlag<LangOpts<"NoWasmOpt">>;
+
+def nds_platform_EQ : Joined<["-"], "nds-platform=">,
+  Visibility<[ClangOption, CLOption, FlangOption]>,
+  HelpText<"Specify the NDS platform configuration file">,
+  MetaVarName<"<file>">;

@@ -197,7 +197,7 @@ public:
     SUSE,
     OpenEmbedded,
     Intel,
-    Nuvoton,
+    NDS, // Near-Data storage
     LastVendorType = Intel
   };
   enum OSType {
