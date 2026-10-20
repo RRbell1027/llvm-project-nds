@@ -105,7 +105,13 @@ Expected<bool> utils::elf::checkMachine(StringRef Object, uint16_t EMachine) {
   if (const ELF64BEObjectFile *ELFObj =
           dyn_cast<ELF64BEObjectFile>(&**ElfOrErr))
     return checkMachineImpl(*ELFObj, EMachine);
-  return createError("Only 64-bit ELF files are supported");
+  if (const ELF32LEObjectFile *ELFObj =
+          dyn_cast<ELF32LEObjectFile>(&**ElfOrErr))
+    return checkMachineImpl(*ELFObj, EMachine);
+  if (const ELF32BEObjectFile *ELFObj =
+          dyn_cast<ELF32BEObjectFile>(&**ElfOrErr))
+    return checkMachineImpl(*ELFObj, EMachine);
+  return createError("Unsupported ELF format");
 }
 
 template <class ELFT>
@@ -314,7 +320,11 @@ utils::elf::getSymbol(const ObjectFile &Obj, StringRef Name) {
     return getSymbolImpl(*ELFObj, Name);
   if (const ELF64BEObjectFile *ELFObj = dyn_cast<ELF64BEObjectFile>(&Obj))
     return getSymbolImpl(*ELFObj, Name);
-  return createError("Only 64-bit ELF files are supported");
+  if (const ELF32LEObjectFile *ELFObj = dyn_cast<ELF32LEObjectFile>(&Obj))
+    return getSymbolImpl(*ELFObj, Name);
+  if (const ELF32BEObjectFile *ELFObj = dyn_cast<ELF32BEObjectFile>(&Obj))
+    return getSymbolImpl(*ELFObj, Name);
+  return createError("Unsupported ELF format");
 }
 
 template <class ELFT>
@@ -355,5 +365,9 @@ utils::elf::getSymbolAddress(const ELFSymbolRef &SymRef) {
     return getSymbolAddressImpl(*ELFObj, SymRef);
   if (const ELF64BEObjectFile *ELFObj = dyn_cast<ELF64BEObjectFile>(Obj))
     return getSymbolAddressImpl(*ELFObj, SymRef);
-  return createError("Only 64-bit ELF files are supported");
+  if (const ELF32LEObjectFile *ELFObj = dyn_cast<ELF32LEObjectFile>(Obj))
+    return getSymbolAddressImpl(*ELFObj, SymRef);
+  if (const ELF32BEObjectFile *ELFObj = dyn_cast<ELF32BEObjectFile>(Obj))
+    return getSymbolAddressImpl(*ELFObj, SymRef);
+  return createError("Unsupported ELF format");
 }
