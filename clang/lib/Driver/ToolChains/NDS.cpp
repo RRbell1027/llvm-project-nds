@@ -88,11 +88,7 @@ void NDSToolChain::PlatformConfig::deriveBuildrootToolchainPaths(
 }
 
 std::string NDSToolChain::PlatformConfig::lookupConfigFile(const ArgList &Args) {
-  // -nds-platform=<file> 尚未定義於 Options.td。Driver 在建立 toolchain 之前
-  // 就會拒絕未知選項，因此這裡還不能讀到該旗標。
-  // Options.td 加入 Joined 選項 nds_platform_EQ 之後，只改這個函式：
-  //   if (const Arg *A = Args.getLastArg(options::OPT_nds_platform_EQ))
-  //     return std::string(A->getValue());
+  // Read the platform selected by the Joined driver option.
   if (const Arg *A = Args.getLastArg(options::OPT_nds_platform_EQ))
     return A->getValue();
   return {};
@@ -296,6 +292,10 @@ void nds::Linker::ConstructJob(Compilation &C, const JobAction &JA,
       continue;
     OrigCmdArgs.push_back(Args.MakeArgString(FileName));
   }
+
+  // Platform library directories must reach the external linker driver.
+  for (const std::string &Dir : Platform.LibrarySearchPaths)
+    OrigCmdArgs.push_back(Args.MakeArgString("-L" + Dir));
 
   // g++ 驅動程式不會自動補上這些函式庫，因為參數是手動組出來的。
   for (const std::string &Lib : Platform.LinkLibraries)

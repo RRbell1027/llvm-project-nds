@@ -1,0 +1,6 @@
+find_path(NDS_RUNTIME_INCLUDE_DIR nd_runtime.h REQUIRED)
+find_library(NDS_RUNTIME_LIBRARY NAMES nd_runtime REQUIRED)
+add_target_library(omptarget.rtl.nds NDS)
+target_sources(omptarget.rtl.nds PRIVATE src/rtl.cpp)
+target_include_directories(omptarget.rtl.nds PRIVATE ${NDS_RUNTIME_INCLUDE_DIR})
+target_link_libraries(omptarget.rtl.nds PRIVATE ${NDS_RUNTIME_LIBRARY})

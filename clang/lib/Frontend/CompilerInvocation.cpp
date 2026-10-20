@@ -4444,8 +4444,12 @@ bool CompilerInvocation::ParseLangArgs(LangOptions &Opts, ArgList &Args,
     for (unsigned i = 0; i < A->getNumValues(); ++i) {
       llvm::Triple TT(A->getValue(i));
 
+      // NDS keeps the device's native ARM32 layout. Its runtime transports
+      // device addresses as fixed-width handles across the host/device boundary.
+      const bool IsNDSARM = TT.getVendor() == llvm::Triple::NDS &&
+                            TT.getArch() == llvm::Triple::arm;
       if (TT.getArch() == llvm::Triple::UnknownArch ||
-          !(TT.getArch() == llvm::Triple::aarch64 || TT.isPPC() ||
+          !(IsNDSARM || TT.getArch() == llvm::Triple::aarch64 || TT.isPPC() ||
             TT.getArch() == llvm::Triple::spirv64 ||
             TT.getArch() == llvm::Triple::systemz ||
             TT.getArch() == llvm::Triple::loongarch64 ||
@@ -4454,7 +4458,7 @@ bool CompilerInvocation::ParseLangArgs(LangOptions &Opts, ArgList &Args,
             TT.getArch() == llvm::Triple::x86 ||
             TT.getArch() == llvm::Triple::x86_64))
         Diags.Report(diag::err_drv_invalid_omp_target) << A->getValue(i);
-      else if (getArchPtrSize(T) != getArchPtrSize(TT))
+      else if (!IsNDSARM && getArchPtrSize(T) != getArchPtrSize(TT))
         Diags.Report(diag::err_drv_incompatible_omp_arch)
             << A->getValue(i) << T.str();
       else
