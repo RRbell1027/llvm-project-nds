@@ -192,6 +192,12 @@ Error NDSKernelTy::launchImpl(GenericDeviceTy &Generic, uint32_t Threads[3], uin
     if (!Storage[I]) return Plugin::error(ErrorCode::INVALID_VALUE, "NDS argument storage missing");
     uintptr_t Address;
     std::memcpy(&Address, Storage[I], sizeof(Address));
+    // LLVM prepends a launch-environment sentinel when no environment is
+    // needed. ARM CPU kernels do not dereference it; never treat the host's
+    // all-ones sentinel as a mapped device pointer.
+    if (I == 0 && Args.Version >= OMP_KERNEL_ARG_MIN_VERSION_WITH_DYN_PTR &&
+        Address == ~uintptr_t(0))
+      Address = 0;
     WireArgs.push_back(Address);
   }
   if (nd_rt_launch(D.Client, Function, WireArgs.data(), WireArgs.size())) return D.rpcError("launch");
