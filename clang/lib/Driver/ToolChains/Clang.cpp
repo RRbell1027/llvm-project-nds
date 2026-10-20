@@ -9104,6 +9104,7 @@ void LinkerWrapper::ConstructJob(Compilation &C, const JobAction &JA,
   // A list of permitted options that will be forwarded to the embedded device
   // compilation job.
   const llvm::DenseSet<unsigned> CompilerOptions{
+      OPT_nds_platform_EQ,
       OPT_v,
       OPT_cuda_path_EQ,
       OPT_rocm_path_EQ,

@@ -509,8 +509,10 @@ Expected<StringRef> clang(ArrayRef<StringRef> InputFiles, const ArgList &Args,
   for (StringRef InputFile : InputFiles)
     CmdArgs.push_back(InputFile);
 
-  // If this is CPU offloading we copy the input libraries.
-  if (!Triple.isGPU()) {
+  // NDS libraries come from its platform configuration, not the host's
+  // OpenMP runtime or other host libraries (which may have a different ABI).
+  // Its toolchain also supplies the shared-image linker options.
+  if (!Triple.isGPU() && Triple.getVendor() != llvm::Triple::NDS) {
     CmdArgs.push_back("-Wl,-Bsymbolic");
     CmdArgs.push_back("-shared");
     ArgStringList LinkerArgs;
@@ -579,6 +581,9 @@ Expected<StringRef> linkDevice(ArrayRef<StringRef> InputFiles,
                                const ArgList &Args,
                                uint16_t ActiveOffloadKindMask) {
   const llvm::Triple Triple(Args.getLastArgValue(OPT_triple_EQ));
+  // NDS selects its platform linker independently of the device architecture.
+  if (Triple.getVendor() == llvm::Triple::NDS)
+    return generic::clang(InputFiles, Args, ActiveOffloadKindMask);
   switch (Triple.getArch()) {
   case Triple::nvptx:
   case Triple::nvptx64:

@@ -6797,6 +6797,10 @@ const ToolChain &Driver::getToolChain(const ArgList &Args,
                                       const llvm::Triple &Target) const {
 
   auto &TC = ToolChains[Target.str()];
+  // The linker wrapper invokes a separate clang --target=<device> job.
+  // Honor the NDS vendor there as well as in getOffloadToolChain().
+  if (!TC && Target.getVendor() == llvm::Triple::NDS)
+    TC = std::make_unique<toolchains::NDSToolChain>(*this, Target, Args);
   if (!TC) {
     switch (Target.getOS()) {
     case llvm::Triple::AIX:
