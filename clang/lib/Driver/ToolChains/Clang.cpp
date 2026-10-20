@@ -1105,11 +1105,26 @@ void Clang::AddPreprocessingOptions(Compilation &C, const JobAction &JA,
   // arguments of related offloading toolchains or arguments that are specific
   // of an offloading programming model.
 
+  // NDS devices have their own libc/C++ ABI. Do not mix native host headers
+  // into their compile, or device headers into the native host compile.
+  auto ForHeaderToolChains = [&](llvm::function_ref<void(const ToolChain &)> Work) {
+    if (JA.isDeviceOffloading(Action::OFK_OpenMP) &&
+        getToolChain().getTriple().getVendor() == llvm::Triple::NDS) {
+      Work(getToolChain());
+      return;
+    }
+    forAllAssociatedToolChains(C, JA, getToolChain(), [&](const ToolChain &TC) {
+      if (JA.isHostOffloading(Action::OFK_OpenMP) &&
+          TC.getTriple().getVendor() == llvm::Triple::NDS)
+        return;
+      Work(TC);
+    });
+  };
+
   // Add C++ include arguments, if needed.
   if (types::isCXX(Inputs[0].getType())) {
     bool HasStdlibxxIsystem = Args.hasArg(options::OPT_stdlibxx_isystem);
-    forAllAssociatedToolChains(
-        C, JA, getToolChain(),
+    ForHeaderToolChains(
         [&Args, &CmdArgs, HasStdlibxxIsystem](const ToolChain &TC) {
           HasStdlibxxIsystem ? TC.AddClangCXXStdlibIsystemArgs(Args, CmdArgs)
                              : TC.AddClangCXXStdlibIncludeArgs(Args, CmdArgs);
@@ -1147,10 +1162,9 @@ void Clang::AddPreprocessingOptions(Compilation &C, const JobAction &JA,
 
   // Add system include arguments for all targets but IAMCU.
   if (!IsIAMCU)
-    forAllAssociatedToolChains(C, JA, getToolChain(),
-                               [&Args, &CmdArgs](const ToolChain &TC) {
-                                 TC.AddClangSystemIncludeArgs(Args, CmdArgs);
-                               });
+    ForHeaderToolChains([&Args, &CmdArgs](const ToolChain &TC) {
+      TC.AddClangSystemIncludeArgs(Args, CmdArgs);
+    });
   else {
     // For IAMCU add special include arguments.
     getToolChain().AddIAMCUIncludeArgs(Args, CmdArgs);

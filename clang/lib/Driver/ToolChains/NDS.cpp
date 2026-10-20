@@ -328,7 +328,25 @@ NDSToolChain::NDSToolChain(const Driver &D, const llvm::Triple &Triple,
 void NDSToolChain::AddClangCXXStdlibIncludeArgs(
     const llvm::opt::ArgList &DriverArgs,
     llvm::opt::ArgStringList &C11Args) const {
-  printf("AddClangCXXStdlibIncludeArgs\n");
+  if (DriverArgs.hasArg(options::OPT_nostdinc, options::OPT_nostdincxx,
+                        options::OPT_nostdlibinc))
+    return;
+  const std::string Base = Platform->GCCParentLibPath + "/../" +
+                           Platform->ToolchainTriple + "/include/c++/" +
+                           Platform->GCCVersion;
+  addSystemInclude(DriverArgs, C11Args, Base);
+  addSystemInclude(DriverArgs, C11Args, Base + "/" + Platform->ToolchainTriple);
+  addSystemInclude(DriverArgs, C11Args, Base + "/backward");
+}
+
+void NDSToolChain::AddClangSystemIncludeArgs(const ArgList &Args,
+                                            ArgStringList &CC1Args) const {
+  if (Args.hasArg(options::OPT_nostdinc))
+    return;
+  if (!Args.hasArg(options::OPT_nobuiltininc))
+    addSystemInclude(Args, CC1Args, getDriver().ResourceDir + "/include");
+  if (!Args.hasArg(options::OPT_nostdlibinc))
+    addExternCSystemInclude(Args, CC1Args, Platform->SysRoot + "/usr/include");
 }
 
 Tool *NDSToolChain::buildAssembler() const { return new nds::Assembler(*this); }

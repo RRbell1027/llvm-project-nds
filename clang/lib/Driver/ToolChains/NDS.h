@@ -102,6 +102,8 @@ public:
   void AddClangCXXStdlibIncludeArgs(
       const llvm::opt::ArgList &DriverArgs,
       llvm::opt::ArgStringList &C11Args) const override;
+  void AddClangSystemIncludeArgs(const llvm::opt::ArgList &Args,
+                                llvm::opt::ArgStringList &CC1Args) const override;
   std::string computeSysRoot() const override {
     return GCCInstallation.getSysRoot();
   }
