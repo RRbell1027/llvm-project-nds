@@ -36,15 +36,15 @@ struct NDSDeviceTy : GenericDeviceTy {
     const char *Path = std::getenv("ND_RUNTIME_DEVICE_PATH");
     if (!Path)
       return Plugin::error(ErrorCode::INVALID_VALUE, "ND_RUNTIME_DEVICE_PATH is required");
-    Client = nd_rt_open(Path);
+    Client = nd_rt_acquire(Path);
     if (!Client) return rpcError("connect");
     if (nd_rt_device_bits(Client) != 32) {
-      nd_rt_close(Client); Client = nullptr;
+      nd_rt_release(Client); Client = nullptr;
       return Plugin::error(ErrorCode::UNSUPPORTED, "NDS requires a 32-bit ARM executor");
     }
     return Plugin::success();
   }
-  Error deinitImpl() override { nd_rt_close(Client); Client = nullptr; return Plugin::success(); }
+  Error deinitImpl() override { nd_rt_release(Client); Client = nullptr; return Plugin::success(); }
   Error setContext() override { return Plugin::success(); }
   std::string getComputeUnitKind() const override { return "generic-32bit"; }
   Expected<GenericKernelTy &> constructKernel(const char *Name) override {
